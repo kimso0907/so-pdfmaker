@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sooo.pdfmaker.mapper.PdfMakerMapper">
+
+<select id="getTagStr" resultType="com.sooo.pdfmaker.domain.TagStrVO">
+<![CDATA[
+SELECT STR_CODE strCode, TAG_STR tagStr, COMMENT comment
+FROM tag_str_tb
+WHERE CURRENT_TIMESTAMP BETWEEN TIMESTAMP(START_DT) 
+							AND IFNULL(TIMESTAMP(END_DT), TIMESTAMP('9999-12-31'))
+]]>
+</select>
+
+<select id="getTagList" resultType="com.sooo.pdfmaker.domain.TagStrVO">
+<![CDATA[
+SELECT TAG_CODE tagCode, flag, TAG_NAME tagName, TAG_TYPE tagType, CSS_CODE cssCode, STR_CODE strCode, TREE_CODE treeCode, comment, PARENT_CODE parentCode
+FROM tag_tb
+WHERE CURRENT_TIMESTAMP BETWEEN TIMESTAMP(START_DT) AND IFNULL(TIMESTAMP(END_DT), TIMESTAMP('9999-12-31'))
+ORDER BY SORT_NO
+]]>
+</select>
+
+<select id="getSettingList" resultType="com.sooo.pdfmaker.domain.TagStrVO">
+select set_code setCode, padding, margin, width, height, font, font_size, font_weight, color, align, justify_content, colspan, rowspan, text_align from default_setting_tb 
+WHERE CURRENT_TIMESTAMP BETWEEN TIMESTAMP(START_DT) AND IFNULL(TIMESTAMP(END_DT), TIMESTAMP('9999-12-31'))
+</select>
+
+</mapper>
