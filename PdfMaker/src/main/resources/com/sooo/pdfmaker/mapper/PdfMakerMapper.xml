@@ -16,9 +16,19 @@ WHERE CURRENT_TIMESTAMP BETWEEN TIMESTAMP(START_DT)
 
 <select id="getTagList" resultType="com.sooo.pdfmaker.domain.TagStrVO">
 <![CDATA[
-SELECT TAG_CODE tagCode, flag, TAG_NAME tagName, TAG_TYPE tagType, CSS_CODE cssCode, STR_CODE strCode, TREE_CODE treeCode, comment, PARENT_CODE parentCode
-FROM tag_tb
-WHERE CURRENT_TIMESTAMP BETWEEN TIMESTAMP(START_DT) AND IFNULL(TIMESTAMP(END_DT), TIMESTAMP('9999-12-31'))
+SELECT  TAG_CODE tagCode,
+	    CSS_CODE cssCode, 
+	    STR_CODE strCode, 
+	   TREE_CODE treeCode, 
+	 PARENT_CODE parentCode, flag, tagName, tagType, comment
+FROM tag_tb t, (SELECT des_code, 
+					   han_name AS tagName, 
+					   eng_name AS tagType 
+				FROM description_tb) d
+WHERE 1 = 1
+  AND CURRENT_TIMESTAMP BETWEEN TIMESTAMP(START_DT) 
+  							AND IFNULL(TIMESTAMP(END_DT), TIMESTAMP('9999-12-31'))
+  AND d.des_code = t.des_code 
 ORDER BY SORT_NO
 ]]>
 </select>
@@ -26,6 +36,20 @@ ORDER BY SORT_NO
 <select id="getSettingList" resultType="com.sooo.pdfmaker.domain.TagStrVO">
 select set_code setCode, padding, margin, width, height, font, font_size, font_weight, color, align, justify_content, colspan, rowspan, text_align from default_setting_tb 
 WHERE CURRENT_TIMESTAMP BETWEEN TIMESTAMP(START_DT) AND IFNULL(TIMESTAMP(END_DT), TIMESTAMP('9999-12-31'))
+</select>
+
+<select id="getRefSetting" resultType="com.sooo.pdfmaker.domain.TagStrVO">
+select ref_code refCode, des_code desCode, type, value, suffix
+from ref_setting_tb
+</select>
+
+<select id="getDefSetting" resultType="com.sooo.pdfmaker.domain.TagStrVO">
+select tag_code tagCode, property, des_code desCode, ref_code refCode, value
+from def_setting_tb
+</select>
+
+<select id="getDescription" resultType="com.sooo.pdfmaker.domain.TagStrVO">
+select des_code desCode, han_name hanName, eng_name engName from description_tb
 </select>
 
 </mapper>

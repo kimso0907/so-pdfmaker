@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -42,6 +43,8 @@ public class PdfDownloadServiceImpl implements PdfDownloadService {
 
 	private static List<TagStrVO> settingList;
 	private static List<TagStrVO> tagList;
+	private static List<TagStrVO> refSettingList;
+	private static List<TagStrVO> defSettingList;
 	
 	@Autowired
 	PdfMakerService service;
@@ -116,8 +119,10 @@ public class PdfDownloadServiceImpl implements PdfDownloadService {
 	}
 
 	private void setDefault() {
-		settingList = service.getSettingList();
-		tagList = service.getTagList();
+		settingList	   = service.getSettingList();
+		tagList 	   = service.getTagList();
+		refSettingList = service.getRefSetting();
+		defSettingList = service.getDefSetting();
 	}
 	
 	
@@ -126,8 +131,6 @@ public class PdfDownloadServiceImpl implements PdfDownloadService {
 		final PDDocument doc = new PDDocument();
 		
 		// 한글폰트
-//		InputStream fontStream1 = new FileInputStream("data/font/MALGUN.TTF");
-//		InputStream fontStream2 = new FileInputStream("data/font/MALGUNBD.TTF");
 		InputStream fontStream1 = new ClassPathResource("data/font/MALGUN.TTF").getInputStream();
 		InputStream fontStream2 = new ClassPathResource("data/font/MALGUNBD.TTF").getInputStream();
 		PDType0Font fontMalgun = PDType0Font.load(doc, fontStream1);
@@ -300,126 +303,47 @@ public class PdfDownloadServiceImpl implements PdfDownloadService {
 					}
 					cells.add(rowArr);
 				}
-//				while (contentStr.contains("<tr")) {
-//					ArrayList<TextDto> rowArr = new ArrayList<TextDto>();
-//					row++;
-//					int subCol = 0;
-//					// end tag 검사
-//					while (contentStr.contains("<td")) {
-//						// end tag 검사
-//
-//						cells.add(rowArr);
-//						contentStr = contentStr.substring(contentStr.indexOf("</td>") + "</td>".length());
-//					}
-//					cells.add(rowArr);
-//					contentStr = contentStr.substring(contentStr.indexOf("</tr>") + "</tr>".length());
-//				}
-				
 				tableDto.setTableRow(row);
 				tableDto.setTableCol(col);
 				tableDto.setCells(cells);
 				
 				return tableDto;
-//				return null;
 			}
 		}
 		
 		return null;
 	}
 	
-	private String[] splitStr(String str, String tag) {
-//		String pageSetting = pdfBody.substring(sPageIdx + "<page".length(), pdfBody.indexOf(">"));
-//		String pageBodyStr = pdfBody.substring(pdfBody.indexOf(">"), pdfBody.indexOf("</page>"));
-//		pdfBody = pdfBody.substring(ePageIdx + "</page>".length());
-		return null;
-	}
-//	private void parsePdf(String pageStr, String tag, PDPage page, PDPageContentStream contentStream, PDFont[] font) throws Exception {
-////		drawElement(pageStr, page, contentStream, font, null);//, PDFDto pdf)
-//		drawElement(page, contentStream, font, null);
-//		
-////		String[] tagList = {"text", "table"}; // db 에서 가져온 데이터로 수정 필요
-////		ArrayList<PDFDto> pdfList = new ArrayList<>();
-////		ArrayList<String> tagCheck = new ArrayList<>();
-////		
-////		TableDto table = null;
-////		PDFDto pdfDto = null;
-////		HashMap<String, Object> rowSetting = new HashMap<>();
-////		int row = 0;
-////		int col = 0;
-////		while (pageStr != null && pageStr.length() != 0) {
-////
-////			int idx = -1;
-////			int tagIdx = -1;
-////			for (int i = 1; i < tagList.length; i++) {
-////				int tmpIdx = pageStr.indexOf("<" + tagList[i]);
-////				if (tmpIdx != -1) {
-////					if (idx == -1 || idx > tmpIdx) {
-////						idx = tmpIdx;
-////						tagIdx = i;
-////					}
-////				}
-////			}
-////			
-////			if (idx != -1) {
-////				// 태그검사
-////				tagCheck.add(tagList[tagIdx]);
-////				String tag = tagList[tagIdx];
-////				int sIdx = pageStr.indexOf("<" + tag);
-////				int eIdx = pageStr.indexOf(">");
-////				
-////				String tagSetting = pageStr.substring(sIdx + 1, eIdx);
-////				pageStr = pageStr.substring(eIdx + 1);
-////
-////				HashMap<String, Object> settingMap = parseSetting(tagSetting);
-////
-////				if (tag.equals("text")) {
-////					int tmpIdx = pageStr.indexOf("</" + tagList[tagIdx] + ">");
-//////                    String title = pdfBody.substring(0, tmpIdx);
-////
-////					TextDto title = new TextDto();
-////
-////					title.setContent(pageStr.substring(0, tmpIdx));
-////					title.setSetting(settingMap);
-////					pdfDto.setTitle(title);
-////					pdfDto.getContentSort().add(title.toString());
-////				} else if (tag.equals("table")) {
-////					table = new TableDto();
-////					pdfDto.addTable(table);
-////					table.setTableSetting(settingMap);
-////					table.setContents(new ArrayList<TextDto>());
-////					pdfDto.getContentSort().add(table.toString());
-////				}
-////			} else {
-////				break;
-////			}
-////
-////		}
-//	}
-	
 	private static HashMap<String, Object> getDefaultSetting(String tagType) {
 		HashMap<String, Object> map = new HashMap<>();
 
-		String[] settingArr = {};
-		if (tagType.equals("page")) {
-			settingArr = new String[] { "padding=20", "border=0f" };
-		} else if (tagType.equals("text")) {
-			settingArr = new String[] { "padding=10", "size=18", "font=bold", "align=center" };
-		} else if (tagType.equals("table")) {
-			settingArr = new String[] { "padding=10,10,30,10", "size=12", "align=left", "color=black", "border=0.5f",
-					"edge_border=1f", "border_color=black"};
-		} else if (tagType.equals("td")) {
-			settingArr = new String[] { "padding=10", "size=12", "font=normal", "font_weight=normal", "font_size=12", "text_align=left", "border=1", "border_color=black", "edge_border=1"};
-		} else if (tagType.equals("th")) {
-			settingArr = new String[] { "padding=10", "size=12", "font=bold" };
-		} else if (tagType.equals("none")) {
-			settingArr = new String[] { "padding=0", "size=0", "align=left", "font=normal", "border=0" };
-		}
-
-		for (String setting : settingArr) {
-			String[] keyValue = setting.split("=");
-			String key = keyValue[0];
-			String value = keyValue[1];
-			map.put(key, getValueObject(key, value));
+//		String[] settingArr = {};
+//		if (tagType.equals("page")) {
+//			settingArr = new String[] { "padding=20", "border=0f" };
+//		} else if (tagType.equals("text")) {
+//			settingArr = new String[] { "padding=10", "size=18", "font=bold", "align=center" };
+//		} else if (tagType.equals("table")) {
+//			settingArr = new String[] { "padding=10,10,30,10", "size=12", "align=left", "color=black", "border=0.5f",
+//					"edge_border=1f", "border_color=black"};
+//		} else if (tagType.equals("td")) {
+//			settingArr = new String[] { "padding=10", "size=12", "font=normal", "font_weight=normal", "font_size=12", "text_align=left", "border=1", "border_color=black", "edge_border=1"};
+//		} else if (tagType.equals("th")) {
+//			settingArr = new String[] { "padding=10", "size=12", "font=bold" };
+//		} else if (tagType.equals("none")) {
+//			settingArr = new String[] { "padding=0", "size=0", "align=left", "font=normal", "border=0" };
+//		}
+//
+//		for (String setting : settingArr) {
+//			String[] keyValue = setting.split("=");
+//			String key = keyValue[0];
+//			String value = keyValue[1];
+//			map.put(key, getValueObject(key, value));
+//		}
+		
+		List<TagStrVO> defList = defSettingList.stream().filter(s -> s.getTagCode().equals(tagType)).collect(Collectors.toList());
+		for (TagStrVO vo : defList) {
+			String[] keyValue = vo.getValue().split(":");
+			System.out.println(vo.getProperty() + " : " + vo.getValue());
 		}
 		return map;
 	}

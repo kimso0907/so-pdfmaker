@@ -39,4 +39,22 @@ public class PdfMakerServiceImpl implements PdfMakerService {
 		return mapper.getSettingList();
 	}
 
+	@Override
+	public List<TagStrVO> getRefSetting() {
+		// TODO Auto-generated method stub
+		return mapper.getRefSetting();
+	}
+
+	@Override
+	public List<TagStrVO> getDefSetting() {
+		// TODO Auto-generated method stub
+		return mapper.getDefSetting();
+	}
+
+	@Override
+	public List<TagStrVO> getDescription() {
+		// TODO Auto-generated method stub
+		return mapper.getDescription();
+	}
+
 }

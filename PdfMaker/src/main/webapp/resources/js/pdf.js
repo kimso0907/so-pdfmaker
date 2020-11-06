@@ -7,10 +7,14 @@ var defSizeList = {
 var elementList = [];
 var seqList = [];
 var pdfScale = 0.7;
-var tagList = [];
-var tagStrList = [];
-var defStyleList = [];
-var subTagList = [];
+
+var mainTag;
+var subTag;
+var tagStrList;
+
+var refSetting;
+var defSetting;
+var description;
 
 $(document).ready(function() {
 	init();
@@ -22,29 +26,19 @@ function init() {
 		url : "./getTagStr.do",
 		type : "GET",
 		dataType : "json",
+//		async : false,
 		contentType : "application/text; charset=UTF-8",
 		success : function(result) {
-			for ( var i in result.tag) {
-				var idx = result.tag[i].tagCode;
-				if (result.tag[i].flag == "PDF_BODY") {
-					tagList[idx] = [];
-					tagList[idx] = result.tag[i];
-				}
-				else if (result.tag[i].flag == "CSS") {
-					subTagList[idx] = [];
-					subTagList[idx] = result.tag[i];
-				}
-			}
-			for ( var i in result.tagStr) {
-				var idx = result.tagStr[i].strCode;
-				tagStrList[idx] = [];
-				tagStrList[idx] = result.tagStr[i];
-			}
-			for ( var i in result.setting) {
-				var idx = result.setting[i].setCode;
-				defStyleList[idx] = [];
-				defStyleList[idx] = result.setting[i];
-			}
+
+			mainTag = filterJson(result.tag, "flag", "PDF_BODY");
+			subTag = filterJson(result.tag, "flag", "CSS");
+			
+			tagStrList = result.tagStr;
+	
+			refSetting = result.refSetting;
+			defSetting = result.defSetting;
+			description = result.description;
+			
 			addBtn();
 			setBtnActivation();
 		},
@@ -53,9 +47,6 @@ function init() {
 		}
 	});
 	
-	addBtn();
-	setBtnActivation();
-
 	$(".div-add-element").css("width", defSizeList.maxWidth * pdfScale);
 	$("#box_page").css("width", defSizeList.maxWidth * pdfScale);
 	$("#box_page").css("height", defSizeList.maxHeight * pdfScale);
@@ -69,17 +60,17 @@ function addBtn() {
 	var boxAddBtn = $("#box_addbtn");
 	var cssModal = $("#css_modal");
 	var keyList = [ "tagCode", "tagName" ];
-
+	
 	// PDF 요소 추가
-	for ( var i in tagList) {
-		boxAddBtn.append(applyToFormat("TAG_BTN_01", makeValueList(tagList[i],
+	for ( var i in mainTag) {
+		boxAddBtn.append(applyToFormat("TAG_BTN_01", makeValueList(mainTag[i],
 				keyList)));
 	}
 
 	// 모달에 SUB TAG 추가
-	for ( var i in subTagList) {
+	for ( var i in subTag) {
 		cssModal.append(applyToFormat("TAG_BTN_02", makeValueList(
-				subTagList[i], keyList)));
+				subTag[i], keyList)));
 	}
 }
 
@@ -88,10 +79,13 @@ function addBtn() {
  * @returns
  */
 function clickAddElement(code) {
-
-	var tagCode = tagList[code].strCode;
-	var treeCode = tagList[code].treeCode;
-	var cssCode = tagList[code].cssCode;
+	
+	var tempTag = filterJson(mainTag, "tagCode", code)[0];
+	
+	var tagCode = tempTag.strCode;
+	var treeCode = tempTag.treeCode;
+	var cssCode = tempTag.cssCode;
+	
 	var id, pageSeq, tagName;
 	var parentObj, treeObj;
 	var tagValue, element;
@@ -100,6 +94,8 @@ function clickAddElement(code) {
 	if (code.indexOf("tr") != -1 || code.indexOf("td") != -1) {
 
 		var row, col;
+		var trTag = filterJson(mainTag, "tagCode", "tr")[0];
+		var tdTag = filterJson(mainTag, "tagCode", "td")[0];
 
 		parentObj = $(".sel-table");
 		id = parentObj.attr("id") + "_";
@@ -108,19 +104,21 @@ function clickAddElement(code) {
 			row = elementList[parentObj.attr("id")].row + 1;
 			col = elementList[parentObj.attr("id")].col;
 
-			tagName = tagList[code].tagName;
+			tagName = tempTag.tagName;
 			elementList[parentObj.attr("id")].row = row;
 
 		} else if (code.indexOf("td") != -1) {
 			row = elementList[parentObj.attr("id")].row;
 			col = elementList[parentObj.attr("id")].col + 1;
-			tagName = tagList[code].tagName;
+			tagName = tempTag.tagName;
 			elementList[parentObj.attr("id")].col = col;
 		}
 
 		for (var r = 0; r < row; r++) {
+			
 			var rowId = id + r;
-			tagName = tagList["tr"].tagName + r;
+			
+			tagName = trTag.tagName + r;
 			if ($("#" + rowId).length == 0) {
 				tagValue = {
 					"id" : rowId,
@@ -138,7 +136,7 @@ function clickAddElement(code) {
 			for (var c = sCol; c < col; c++) {
 				var pObj = parentObj.children().eq(r);
 				var tObj = $("#" + pObj.attr("id") + "_div");
-				tagName = tagList["td"].tagName + r + "_" + c;
+				tagName = tdTag.tagName + r + "_" + c;
 				tagValue = {
 					"id" : rowId + "_" + c,
 					"tagName" : tagName
@@ -160,7 +158,7 @@ function clickAddElement(code) {
 			parentObj = $("#box_page");
 			treeObj = $("#box_tree");
 			pageSeq = parentObj.children().length;
-			tagName = tagList[code].tagName + pageSeq;
+			tagName = tempTag.tagName + pageSeq;
 			id = code + "_" + pageSeq;
 			tagValue = {
 				"id" : id,
@@ -182,9 +180,14 @@ function clickAddElement(code) {
 			parentObj = $(".div-sel-page");
 			treeObj = $("#" + parentObj.attr("id") + "_div");
 			var listId = parentObj.attr("id");
+			
+			if (elementList[listId][code] == null) {
+				elementList[listId][code] = [];
+			}
+			
 			var eleSeqNo = elementList[listId][code].length;
 			pageSeq = elementList[listId].seqNo;
-			tagName = tagList[code].tagName + (eleSeqNo + 1);
+			tagName = tempTag.tagName + (eleSeqNo + 1);
 			id = code + "_" + pageSeq + "_" + eleSeqNo;
 			elementList[listId][code][eleSeqNo] = "tree_" + id;
 			tagValue = {
@@ -225,15 +228,18 @@ function clickAddElement(code) {
  */
 function addElement(code, tagValue, element, pObj, tObj) {
 
-	var tagCode = tagList[code].strCode;
-	var treeCode = tagList[code].treeCode;
-	var cssCode = tagList[code].cssCode;
+	var tempTag = filterJson(mainTag, "tagCode", code)[0];
+	var tagCode = tempTag.strCode;
+	var treeCode = tempTag.treeCode;
+	var cssCode = tempTag.cssCode;
+
+	var tempSet = filterJson(defSetting, "tagCode", tempTag.tagCode);
 
 	elementList[tagValue.id] = element;
 
-	for ( var i in tagList) {
+	for ( var i in tempTag) {
 		var codeToLower = code.toLowerCase();
-		var parentToLower = tagList[i].parentCode.toLowerCase();
+		var parentToLower = tempTag.parentCode.toLowerCase();
 		if (parentToLower.indexOf(codeToLower) != -1) {
 			elementList[tagValue.id][i] = [];
 		}
@@ -242,13 +248,13 @@ function addElement(code, tagValue, element, pObj, tObj) {
 	pObj.append(applyToFormat(tagCode, tagValue)); // 새 페이지 추가
 	tObj.append(applyToFormat(treeCode, tagValue)); // 트리추가	
 
-	if (tagList[code].parentCode != "ROOT"
+	if (tempTag.parentCode != "ROOT"
 			&& $("#" + pObj.attr("id") + "_div").attr("class").indexOf(
 					"div-tree-hide") != -1) {
 		toggleFold(pObj.attr("id") + "_div"); // 트리 상태변경
 	}
 
-	setStyle(tagValue.id, defStyleList[cssCode], defStyleList[cssCode]);
+	setStyle(tagValue.id, new Array(), tempSet);
 
 	$(".sel-" + code).removeClass("sel-" + code);
 	$("#" + tagValue.id).addClass("sel-" + code);
@@ -260,25 +266,22 @@ function addElement(code, tagValue, element, pObj, tObj) {
  * @param defValue
  * @returns
  */
-function setStyle(id, cssValue, defValue) {
+function setStyle(id, editValue, defValue) {
 
 	for ( var i in defValue) {
-		if (defValue[i].length != 0) {
-			var value = cssValue[i];
-				value = value == null ? defValue[i] : value;
-				value = parseValue(i.replace("_", "-"), value);
+		var tempValue = defValue[i];
+		var property = tempValue.property;
+		
+		if (tempValue.value != null) {
+			
+			var value = editValue[i];
+				value = value == null ? tempValue.value : value;
+				value = parseValue(value);
 
 			if (value == null || value.length == 0) {
 				continue;
 			}
-			if (i == "font-size") {
-				if (cssValue["font-weight"] == "bold") {
-					value *= defSizeList.fontBold;
-				} else {
-					value *= defSizeList.fontNormal;
-				}
-			}
-			$("#" + id).css(i.replace("_", "-"), value);
+			$("#" + id).css(property, value);
 		}
 	}
 }
@@ -303,40 +306,20 @@ function toggleFold(id) {
  * @param value
  * @returns
  */
-function parseValue(key, value) {
-	if (key == "font-size" || key == "width") {
-
-		if (value.indexOf("px") != -1) {
-			value = value.replace("px", "");
-			console.log(value);
-			console.log(value * pdfScale);
-			return value * pdfScale;
+function parseValue(value) {
+	
+	var keyValue = value.split(":");
+	var refSet = filterJson(refSetting, "refCode", keyValue[0])[0];
+	var suffix = refSet.suffix == null ? "" : refSet.suffix;
+	
+	var val = keyValue[1].split(",");
+	for (var i = 0; i < val.length; i++) {
+		if (refSet.refCode == "px") {
+			val[i] = val[i].replace("px", "") * pdfScale;
 		}
-		else if (value.replace(/[0-9]/g, "").length != 0) {
-			return value;
-		}
-		else {
-			return value * pdfScale;
-		}
-		
-	} else if (key == "margin" || key == "padding" || key == "border") {
-		var floatArr = [];
-		var marginStr = value.split(",");
-		for (var i = 0; i < marginStr.length; i++) {
-			var m = (marginStr[i] * pdfScale) + "px";
-			if (i == 0) {
-				floatArr = [ m, m, m, m ];
-			} else if (i == 1) {
-				floatArr[i] = m;
-				floatArr[i + 2] = m;
-			} else {
-				floatArr[i] = m;
-			}
-		}
-		return floatArr[0] + " " + floatArr[1] + " " + floatArr[2] + " "
-				+ floatArr[3];
+		val[i] = val[i] + suffix;
 	}
-	return value;
+	return val;
 }
 
 /**
@@ -359,36 +342,90 @@ function clickElement(id) {
 		$(".sel-" + code).removeClass("sel-" + code);
 		$("#" + id).addClass("sel-" + code);
 		
+		var tempSet = filterJson(defSetting, "tagCode", elementList[id].tagCode);
 		var cssCode = elementList[id].cssCode;
 		var title = elementList[id].text;
 	
 		var valueList = {"id" : id, "title" : elementList[id].text};
 		
-		$("#inneredit_tree").append(applyToFormat("TAG_EDIT_TITLE", valueList));
+		$("#inneredit_tree").append(applyToFormat("TAG_EDIT_TITLE", valueList)); // 타이틀 텍스트
 
-		var brIdx = title.indexOf("\n");
-		if (brIdx != -1) {
-			$("#now_" + id).text(title.substring(0, brIdx));
-		}
-		for ( var i in defStyleList[cssCode]) {
-	
-			if (i == "setCode") {
-				continue;
-			}
-			var value = elementList[id][i];
-			value = value == null ? defStyleList[cssCode][i] : value;
+//		var brIdx = title.indexOf("\n");
+//		if (brIdx != -1) {
+//			$("#now_" + id).text(title.substring(0, brIdx));
+//		}
+		
+		var tempDef = filterJson(defSetting, "tagCode", code); // 변경 가능한 속성 및 기본값
+		for (var i in tempDef) {
+
+			var tempDescription = filterJson(description, "desCode", tempDef[i].desCode)[0];
+			var refList = tempDef[i].refCode.split(";");
 			
-			valueList.cssName = i;
-			valueList.value = value;
-			$("#inneredit_tree").append(applyToFormat("TAG_EDIT_CSS", valueList));
+			var keyVal = nvl(elementList[id][tempDef.property], tempDef[i].value);
+			var key, val;
+			if (keyVal != null) {
+				keyVal = keyVal.split(":");
+				key = keyVal[0];
+				val = keyVal[1];
+			}
+			
+//			<div id='tree_#id#'><button style="cursor:pointer; background:none; border:0;" onclick="toggleFold('#id#_div')"><img id='#id#_div_img' src='/resources/img/tree-icon-plus.png' width='8px'/></button><button id=tree_#id#_btn' class='btn-tree text-sm' onclick="clickElement('#id#')">#tagName#</button></div><div id='#id#_div' class='div-tree-hide'></div>
+			
+			var subValueList = {"id" : tempDef[i].property, "hanName" : tempDescription.hanName};
+			$("#inneredit_tree").append(applyToFormat("SET_AREA", subValueList)); // 속성 영역별
+			
+			for (var j in refList) {
+				var tempRef = filterJson(refSetting, "refCode", refList[j])[0];
+				var tempDesc = filterJson(description, "desCode", tempRef.desCode)[0];
+				
+				$("#" + tempDef[i].property + "_button").append("<button style='display:block'>" + tempDesc.hanName + "</button>");
+				if (tempRef.type == "COMBO") {
+					var inputStr = "<select>";
+					var valArr = tempRef.value.split(";");
+					for (var k in valArr) {
+						inputStr += "<option value='" + valArr[k] + "'>" + valArr[k] + "</option>";
+					}
+					inputStr += "</select>";
+					
+					$("#inneredit_tree").append(inputStr);
+				}
+				else {
+					var inputCnt = 1;
+					var subVal = "";
+					if (tempRef.type.indexOf("_") != -1) {
+						inputCnt = tempRef.type.substring(tempRef.type.indexOf("_") + 1);
+						subVal = val.split(",");
+					}
+
+					for (var k = 0; k < inputCnt; k++) {
+	 					$("#inneredit_tree").append("<input>");
+					}
+				}
+			}
 		}
-		setStyle("now_" + id, elementList[id], defStyleList[cssCode]);
-		setStyle("now_" + id, elementList[id], defStyleList["EDIT_DEFALUT"]);
+//		for ( var i in defStyleList[cssCode]) {
+//	
+//			if (i == "setCode") {
+//				continue;
+//			}
+//			var value = elementList[id][i];
+//			value = value == null ? defStyleList[cssCode][i] : value;
+//			
+//			valueList.cssName = i;
+//			valueList.value = value;
+//			$("#inneredit_tree").append(applyToFormat("TAG_EDIT_CSS", valueList));
+//		}
+//		setStyle("now_" + id, elementList[id], defStyleList[cssCode]);
+//		setStyle("now_" + id, elementList[id], defStyleList["EDIT_DEFALUT"]);
 
 		$("#inneredit_tree").append(applyToFormat("TAG_EDIT_TEXTAREA", valueList));
 		$("#inneredit_tree").append(applyToFormat("TAG_EDIT_DELBTN", valueList));
 	}
 	setBtnActivation();
+}
+
+function nvl(obj1, obj2) {
+	return obj1 != null ? obj1 : obj2;
 }
 
 /**
@@ -493,7 +530,7 @@ function changeStyle(event, id) {
 		if (value != newValue) {
 			elementList[id][targetId] = newValue;
 
-			newValue = parseValue(targetId, newValue);
+			newValue = parseValue(newValue);
 			console.log(newValue);
 			if (targetId == "font_size") {
 				newValue *= pdfScale;
@@ -534,13 +571,6 @@ function addSubTag(type) {
 	textArea.value = forward + replace + backward;
 
 	changeText($(".modi_now").attr("id").replace("now_", ""));
-	
-//	var style = document.createElement('style');
-//	style.type = 'text/css';
-//	style.innerHTML = '.cssClass { size:20px; }';
-//	document.getElementsByTagName('head')[0].appendChild(style);
-////	document.getElementById('modi_now').className = 'cssClass';
-//	$(".text-bold").addClass('cssClass');
 }
 
 /**
@@ -706,10 +736,15 @@ function makeValueList(tagInfo, keyList) {
  * @returns
  */
 function applyToFormat(tagId, tagValue) {
-	var tempStr = tagStrList[tagId].tagStr;
-	tempStr = tempStr.replaceAll("#innerText#",
-			tagStrList["TAG_INNER_TEXT_01"].tagStr);
-	tempStr = tempStr.replaceAll("#dragStr#", tagStrList["CSS_DRAG_01"].tagStr);
+	
+	var strObj = filterJson(tagStrList, "strCode", tagId)[0];
+	var innerObj = filterJson(tagStrList, "strCode", "TAG_INNER_TEXT_01")[0];
+	var DragObj = filterJson(tagStrList, "strCode", "CSS_DRAG_01")[0];
+	
+	var tempStr = strObj.tagStr;
+	
+	tempStr = tempStr.replaceAll("#innerText#", innerObj.tagStr);
+	tempStr = tempStr.replaceAll("#dragStr#", DragObj.tagStr);
 
 	for ( var i in tagValue) {
 		tempStr = tempStr.replaceAll("#" + i + "#", tagValue[i]);
@@ -725,8 +760,15 @@ function applyToFormat(tagId, tagValue) {
 function download(id) {
 	var pdfBody = makeTxt('box_page');
 
-	$("#downloadParam").attr("value", pdfBody);
-	$("#downloadSubmit").submit();
+	console.log(pdfBody);
+//	$("#downloadParam").attr("value", pdfBody);
+//	$("#downloadSubmit").submit();
+}
+
+function filterJson(json, key, value) {
+	return json.filter(function(object) {
+		return object[key] === value;
+	});
 }
 
 /**
@@ -772,28 +814,33 @@ function makeTxt(id) {
  */
 function makeTagStr(id, flag) {
 	var element = elementList[id];
+	var tempTag = filterJson(mainTag, "tagCode", elementList[id].tagCode)[0];
+	var tempSet = filterJson(defSetting, "tagCode", elementList[id].tagCode);
+
 	var str = "";
 	if (element != null) {
 		if (flag == "sTag") {
-			str = tagList[elementList[id].tagCode].tagType;
-			for (var name in defStyleList[element.cssCode]) {
-				
-				if (name == "setCode") {
-					continue;
-				}
+			str = tempTag.tagType;
+//			for (var name in defStyleList[element.cssCode]) {
+			for (var i in tempSet) {
+				var name = tempSet[i].property;
+//				if (name == "setCode") {
+//					continue;
+//				}
 				
 				var value = elementList[id][name];
-				value = value == null || value.length == 0 ? defStyleList[element.cssCode][name] : value;
+				value = value == null || value.length == 0 ? tempSet[name] : value;
 				if (value != null && value.length != 0){
 					str += " ";
 					str += name + "=\"";
 					str += value + "\"";
 				}
 			}
+			console.log(str);
 		}
 		else if ("eTag") {
 			str = "/"
-				+ tagList[elementList[id].tagCode].tagType;
+				+ tempTag.tagType;
 		}
 	}
 	str = "<" + str + ">";
@@ -804,17 +851,21 @@ function makeTagStr(id, flag) {
  * @returns
  */
 function setBtnActivation() {
-	for ( var i in tagList) {
-		var selId = ".sel-" + tagList[i].parentCode.toLowerCase();
-		if (tagList[i].parentCode == "ROOT" || $(selId).length != 0) {
-			$("#btn_add_" + i).attr("disabled", false);
-			$("#btn_add_" + i).removeClass("btn-add-disable");
-			$("#btn_add_" + i).addClass("btn-add-element");
+//	var mainTag = filterJson(tagList, "flag", "PDF_BODY");
+
+	for (var i in mainTag) {
+		var selId = ".sel-" + mainTag[i].parentCode.toLowerCase();
+		var btnId = "#btn_add_" + mainTag[i].tagCode;
+		
+		if (mainTag[i].parentCode == "ROOT" || $(selId).length != 0) {
+			$(btnId).attr("disabled", false);
+			$(btnId).removeClass("btn-add-disable");
+			$(btnId).addClass("btn-add-element");
 		}
 		else {
-			$("#btn_add_" + i).attr("disabled", true);
-			$("#btn_add_" + i).addClass("btn-add-disable");
-			$("#btn_add_" + i).removeClass("btn-add-element");
+			$(btnId).attr("disabled", true);
+			$(btnId).addClass("btn-add-disable");
+			$(btnId).removeClass("btn-add-element");
 		}
 	}
 }

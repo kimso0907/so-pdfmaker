@@ -6,8 +6,8 @@
    <meta charset="UTF-8">
    <title>PDF 생성기</title>
    <script type="text/javascript" src="./resources/js/jquery-3.5.1.min.js"></script>
-   <script type="text/javascript" src="./resources/js/pdf.js?ver=2" charset="UTF-8"></script>
-   <link rel="stylesheet" href="./resources/css/pdf.css?ver=3">
+   <script type="text/javascript" src="./resources/js/pdf.js?ver=<%=System.currentTimeMillis() %>" charset="UTF-8"></script>
+   <link rel="stylesheet" href="./resources/css/pdf.css?ver=<%=System.currentTimeMillis() %>">
    <link rel="shortcut icon" href="./resources/img/pdf.png" type="image/x-icon">
 </head>
 <body>

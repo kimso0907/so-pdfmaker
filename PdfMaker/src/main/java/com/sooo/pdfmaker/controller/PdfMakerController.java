@@ -37,12 +37,19 @@ public class PdfMakerController {
 		
 		List<TagStrVO> tagStrList = service.getTagStr();
 		List<TagStrVO> tagList = service.getTagList();
-		List<TagStrVO> settingList = service.getSettingList();
+//		List<TagStrVO> settingList = service.getSettingList();
+		List<TagStrVO> refSettingList = service.getRefSetting();
+		List<TagStrVO> defSettingList = service.getDefSetting();
+		List<TagStrVO> descriptionList = service.getDescription();
 		
 		HashMap<String, List> map = new HashMap<>();
 		map.put("tagStr", tagStrList);
 		map.put("tag", tagList);
-		map.put("setting", settingList);
+		map.put("refSetting", refSettingList);
+		map.put("defSetting", defSettingList);
+		map.put("description", descriptionList);
+//		map.put("setting", settingList);
+		
 		
 		Gson gson = new Gson();
 		String json = gson.toJson(map);
